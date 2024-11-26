@@ -1,4 +1,44 @@
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum PicobootError {
+    #[error("usb device not found")]
+    UsbDeviceNotFound,
+    #[error("failed to get usb bulk endpoints")]
+    UsbEndpointsNotFound,
+    #[error("usb bulk endpoints are not expected")]
+    UsbEndpointsUnexpected,
+    #[error("failed to detach usb kernel driver: {0}")]
+    UsbDetachKernelDriverFailure(rusb::Error),
+    #[error("failed to claim usb interface: {0}")]
+    UsbClaimInterfaceFailure(rusb::Error),
+    #[error("failed to set alt usb setting: {0}")]
+    UsbSetAltSettingFailure(rusb::Error),
+    #[error("failed to read bulk: {0}")]
+    UsbReadBulkFailure(rusb::Error),
+    #[error("read did not match expected size")]
+    UsbReadBulkMismatch,
+    #[error("failed to write bulk: {0}")]
+    UsbWriteBulkFailure(rusb::Error),
+    #[error("write did not match expected size")]
+    UsbWriteBulkMismatch,
+
+    #[error("failed to clear in addr halt: {0}")]
+    UsbClearInAddrHalt(rusb::Error),
+    #[error("failed to clear out addr halt: {0}")]
+    UsbClearOutAddrHalt(rusb::Error),
+    #[error("failed to reset interface: {0}")]
+    UsbResetInterfaceFailure(rusb::Error),
+
+    #[error("failed to get command status: {0}")]
+    UsbGetCommandStatusFailure(rusb::Error),
+
+    #[error("cmd failed to binary serialize: {0}")]
+    CmdSerializeFailure(bincode::Error),
+    #[error("cmd failed to binary deserialize: {0}")]
+    CmdDeserializeFailure(bincode::Error),
+}
 
 // see https://datasheets.raspberrypi.com/rp2040/rp2040-datasheet.pdf
 // section 2.8.5 for details on PICOBOOT interface
@@ -196,21 +236,21 @@ pub struct PicobootStatusCmd {
     _unused: [u8; 6],
 }
 impl PicobootStatusCmd {
-	pub fn get_token(&self) -> u32 {
-		self.token
-	}
+    pub fn get_token(&self) -> u32 {
+        self.token
+    }
 
-	pub fn get_status_code(&self) -> u32 {
-		self.status_code
-	}
+    pub fn get_status_code(&self) -> u32 {
+        self.status_code
+    }
 
-	pub fn get_cmd_id(&self) -> u8 {
-		self.cmd_id
-	}
+    pub fn get_cmd_id(&self) -> u8 {
+        self.cmd_id
+    }
 
-	pub fn get_in_progress(&self) -> u8 {
-		self.in_progress
-	}
+    pub fn get_in_progress(&self) -> u8 {
+        self.in_progress
+    }
 }
 
 #[derive(Serialize, Debug, Clone)]
@@ -237,16 +277,56 @@ impl PicobootCmd {
         }
     }
 
-	pub fn set_token(mut self, token: u32) -> Self {
-		self.token = token;
-		self
-	}
+    pub fn set_token(mut self, token: u32) -> Self {
+        self.token = token;
+        self
+    }
 
-	pub fn get_transfer_len(&self) -> u32 {
-		self.transfer_len
-	}
+    pub fn get_transfer_len(&self) -> u32 {
+        self.transfer_len
+    }
 
-	pub fn get_cmd_id(&self) -> u8 {
-		self.cmd_id
-	}
+    pub fn get_cmd_id(&self) -> u8 {
+        self.cmd_id
+    }
+
+    pub fn exclusive_access(exclusive: u8) -> Self {
+        let mut args = [0; 16];
+        args[0] = exclusive;
+        PicobootCmd::new(PicobootCmdId::ExclusiveAccess, 1, 0, args)
+    }
+
+    pub fn reboot(pc: u32, sp: u32, delay: u32) -> Self {
+        let args = PicobootRebootCmd::ser(pc, sp, delay);
+        PicobootCmd::new(PicobootCmdId::Reboot, 12, 0, args)
+    }
+
+    pub fn reboot2_normal(delay: u32) -> Self {
+        let flags: u32 = 0x0; // Normal boot
+        let args = PicobootReboot2Cmd::ser(flags, delay, 0, 0);
+        PicobootCmd::new(PicobootCmdId::Reboot2, 0x10, 0, args)
+    }
+
+    pub fn flash_erase(addr: u32, size: u32) -> Self {
+        let args = PicobootRangeCmd::ser(addr, size);
+        PicobootCmd::new(PicobootCmdId::FlashErase, 8, 0, args)
+    }
+
+    pub fn flash_write(addr: u32, size: u32) -> Self {
+        let args = PicobootRangeCmd::ser(addr, size);
+        PicobootCmd::new(PicobootCmdId::Write, 8, size, args)
+    }
+
+    pub fn flash_read(addr: u32, size: u32) -> Self {
+        let args = PicobootRangeCmd::ser(addr, size);
+        PicobootCmd::new(PicobootCmdId::Read, 8, size, args)
+    }
+
+    pub fn enter_xip() -> Self {
+        PicobootCmd::new(PicobootCmdId::EnterCmdXip, 0, 0, [0; 16])
+    }
+
+    pub fn exit_xip() -> Self {
+        PicobootCmd::new(PicobootCmdId::ExitXip, 0, 0, [0; 16])
+    }
 }
