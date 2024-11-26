@@ -36,6 +36,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "picoboot-rs"
+version = "0.1.0"
+dependencies = [
+ "bincode",
+ "rusb",
+ "serde",
+]
+
+[[package]]
 name = "pkg-config"
 version = "0.3.30"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -101,26 +110,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "uf2-decode"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ca77d41ab27e3fa45df42043f96c79b80c6d8632eed906b54681d8d47ab00623"
-
-[[package]]
 name = "unicode-ident"
 version = "1.0.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3354b9ac3fae1ff6755cb6db53683adb661634f67557942dea4facebec0fee4b"
-
-[[package]]
-name = "usb_picoboot_rs"
-version = "0.1.0"
-dependencies = [
- "bincode",
- "rusb",
- "serde",
- "uf2-decode",
-]
 
 [[package]]
 name = "vcpkg"
