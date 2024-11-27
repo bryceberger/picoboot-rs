@@ -68,8 +68,7 @@
 //!                 let size = PICO_PAGE_SIZE as u32;
 //!
 //!                 // write page to flash
-//!                 conn.flash_write(addr, page.to_vec())
-//!                     .expect("failed to write flash");
+//!                 conn.flash_write(addr, page).expect("failed to write flash");
 //!
 //!                 // confirm flash write was successful
 //!                 let read = conn.flash_read(addr, size).expect("failed to read flash");

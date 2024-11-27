@@ -242,7 +242,7 @@ impl<T: UsbContext> PicobootConnection<T> {
         Ok(buf)
     }
 
-    fn bulk_write(&mut self, mut buf: Vec<u8>, check: bool) -> Result<()> {
+    fn bulk_write(&mut self, mut buf: &[u8], check: bool) -> Result<()> {
         let timeout = std::time::Duration::from_secs(5);
         let len = self
             .handle
@@ -266,13 +266,13 @@ impl<T: UsbContext> PicobootConnection<T> {
     /// - [`Error::UsbWriteBulkMismatch`]
     /// - [`Error::UsbReadBulkFailure`]
     /// - [`Error::UsbReadBulkMismatch`]
-    pub fn cmd(&mut self, cmd: PicobootCmd, buf: Vec<u8>) -> Result<Vec<u8>> {
+    pub fn cmd(&mut self, cmd: PicobootCmd, buf: &[u8]) -> Result<Vec<u8>> {
         let cmd = cmd.set_token(self.cmd_token);
         self.cmd_token = self.cmd_token + 1;
 
         // write command
         let cmdu8 = bincode::serialize(&cmd).map_err(|e| Error::CmdSerializeFailure(e))?;
-        self.bulk_write(cmdu8, true)?;
+        self.bulk_write(cmdu8.as_slice(), true)?;
         let _stat = self.get_command_status();
 
         // if we're reading or writing a buffer
@@ -289,7 +289,7 @@ impl<T: UsbContext> PicobootConnection<T> {
 
         // do ack
         if ((cmd.get_cmd_id() as u8) & 0x80) != 0 {
-            self.bulk_write(vec![0], false)?;
+            self.bulk_write(&[0u8; 1], false)?;
         } else {
             self.bulk_read(1, false)?;
         }
@@ -327,7 +327,7 @@ impl<T: UsbContext> PicobootConnection<T> {
 
     fn set_exclusive_access(&mut self, exclusive: u8) -> Result<()> {
         Ok(self
-            .cmd(PicobootCmd::exclusive_access(exclusive), vec![])
+            .cmd(PicobootCmd::exclusive_access(exclusive), &[0u8; 0])
             .map(|_| ())?)
     }
 
@@ -342,7 +342,7 @@ impl<T: UsbContext> PicobootConnection<T> {
     /// - Any produced by [`Self::cmd`]
     pub fn reboot(&mut self, pc: u32, sp: u32, delay: u32) -> Result<()> {
         Ok(self
-            .cmd(PicobootCmd::reboot(pc, sp, delay), vec![])
+            .cmd(PicobootCmd::reboot(pc, sp, delay), &[0u8; 0])
             .map(|_| ())?)
     }
 
@@ -362,7 +362,7 @@ impl<T: UsbContext> PicobootConnection<T> {
         }
 
         Ok(self
-            .cmd(PicobootCmd::reboot2_normal(delay), vec![])
+            .cmd(PicobootCmd::reboot2_normal(delay), &[0u8; 0])
             .map(|_| ())?)
     }
 
@@ -384,7 +384,7 @@ impl<T: UsbContext> PicobootConnection<T> {
         }
 
         Ok(self
-            .cmd(PicobootCmd::flash_erase(addr, size), vec![])
+            .cmd(PicobootCmd::flash_erase(addr, size), &[0u8; 0])
             .map(|_| ())?)
     }
 
@@ -396,7 +396,7 @@ impl<T: UsbContext> PicobootConnection<T> {
     /// # Errors:
     /// - [`Error::WriteInvalidAddr`]
     /// - Any produced by [`Self::cmd`]
-    pub fn flash_write(&mut self, addr: u32, buf: Vec<u8>) -> Result<()> {
+    pub fn flash_write(&mut self, addr: u32, buf: &[u8]) -> Result<()> {
         if addr % PICO_PAGE_SIZE != 0 {
             return Err(Error::WriteInvalidAddr);
         }
@@ -414,7 +414,7 @@ impl<T: UsbContext> PicobootConnection<T> {
     /// # Errors:
     /// - Any produced by [`Self::cmd`]
     pub fn flash_read(&mut self, addr: u32, size: u32) -> Result<Vec<u8>> {
-        self.cmd(PicobootCmd::flash_read(addr, size), vec![])
+        self.cmd(PicobootCmd::flash_read(addr, size), &[0u8; 0])
     }
 
     /// Enter Flash XIP (execute-in-place) mode.
@@ -422,7 +422,7 @@ impl<T: UsbContext> PicobootConnection<T> {
     /// # Errors:
     /// - Any produced by [`Self::cmd`]
     pub fn enter_xip(&mut self) -> Result<()> {
-        Ok(self.cmd(PicobootCmd::enter_xip(), vec![]).map(|_| ())?)
+        Ok(self.cmd(PicobootCmd::enter_xip(), &[0u8; 0]).map(|_| ())?)
     }
 
     /// Exits Flash XIP (execute-in-place) mode.
@@ -430,7 +430,7 @@ impl<T: UsbContext> PicobootConnection<T> {
     /// # Errors:
     /// - Any produced by [`Self::cmd`]
     pub fn exit_xip(&mut self) -> Result<()> {
-        Ok(self.cmd(PicobootCmd::exit_xip(), vec![]).map(|_| ())?)
+        Ok(self.cmd(PicobootCmd::exit_xip(), &[0u8; 0]).map(|_| ())?)
     }
 
     /// Resets PICOBOOT USB interface.
