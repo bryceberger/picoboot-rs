@@ -40,6 +40,9 @@ pub enum PicobootError {
     CmdSerializeFailure(bincode::Error),
     #[error("cmd failed to binary deserialize: {0}")]
     CmdDeserializeFailure(bincode::Error),
+
+    #[error("cmd not allowed for target device")]
+    CmdNotAllowedForTarget,
 }
 
 // see https://datasheets.raspberrypi.com/rp2040/rp2040-datasheet.pdf
@@ -279,8 +282,8 @@ impl PicobootCmd {
         self.transfer_len
     }
 
-    pub fn get_cmd_id(&self) -> u8 {
-        self.cmd_id
+    pub fn get_cmd_id(&self) -> PicobootCmdId {
+        self.cmd_id.try_into().unwrap()
     }
 
     pub fn exclusive_access(exclusive: u8) -> Self {

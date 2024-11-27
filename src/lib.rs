@@ -124,9 +124,7 @@ pub const UF2_RP2350_ARM_NS_FAMILY_ID: u32 = 0xE48BFF5B;
 // pub const UF2_FAMILY_ID_MAX: u32 = 0xE48BFF5B;
 
 pub mod cmd;
-pub use cmd::{
-    PicobootCmd, PicobootCmdId, PicobootError, PicobootStatus, PicobootStatusCmd, TargetID,
-};
+pub use cmd::{PicobootCmd, PicobootCmdId, PicobootError, TargetID};
 
 pub mod usb;
 pub use usb::PicobootConnection;
