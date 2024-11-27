@@ -1,7 +1,5 @@
-use crate::cmd::{
-    PicobootCmd, PicobootError, PicobootStatusCmd, TargetID, PICOBOOT_PID_RP2040,
-    PICOBOOT_PID_RP2350, PICOBOOT_VID,
-};
+use crate::cmd::{PicobootCmd, PicobootError, PicobootStatusCmd, TargetID};
+use crate::{PICOBOOT_PID_RP2040, PICOBOOT_PID_RP2350, PICOBOOT_VID};
 
 use bincode;
 use rusb::{Device, DeviceDescriptor, DeviceHandle, Direction, TransferType, UsbContext};

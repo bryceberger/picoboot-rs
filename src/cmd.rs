@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+use crate::PICOBOOT_MAGIC;
+
 #[derive(Error, Debug)]
 pub enum PicobootError {
     #[error("usb device not found")]
@@ -42,15 +44,6 @@ pub enum PicobootError {
 
 // see https://datasheets.raspberrypi.com/rp2040/rp2040-datasheet.pdf
 // section 2.8.5 for details on PICOBOOT interface
-
-pub const PICO_PAGE_SIZE: usize = 256;
-pub const PICO_SECTOR_SIZE: u32 = 4096;
-pub const PICO_FLASH_START: u32 = 0x10000000;
-pub const PICO_STACK_POINTER: u32 = 0x20042000;
-pub const PICOBOOT_VID: u16 = 0x2E8A;
-pub const PICOBOOT_PID_RP2040: u16 = 0x0003;
-pub const PICOBOOT_PID_RP2350: u16 = 0x000f;
-pub const PICOBOOT_MAGIC: u32 = 0x431FD10B;
 
 #[derive(Debug, Clone, Copy)]
 pub enum TargetID {
