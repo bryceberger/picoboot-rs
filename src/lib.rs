@@ -83,7 +83,8 @@
 //!                     conn.reboot(0x0, PICO_STACK_POINTER, delay)
 //!                         .expect("failed to reboot device");
 //!                 }
-//!                 TargetID::Rp2350 => conn.reboot2_normal(delay).expect("failed to reboot device"),
+//!                 TargetID::Rp2350 => conn.reboot2_normal(delay)
+//! 					.expect("failed to reboot device"),
 //!             }
 //!         }
 //!         Err(e) => panic!("Could not initialize libusb: {}", e),
@@ -122,8 +123,10 @@ pub const UF2_RP2350_RISCV_FAMILY_ID: u32 = 0xE48BFF5A;
 pub const UF2_RP2350_ARM_NS_FAMILY_ID: u32 = 0xE48BFF5B;
 // pub const UF2_FAMILY_ID_MAX: u32 = 0xE48BFF5B;
 
+/// Command Module
 pub mod cmd;
 pub use cmd::{PicobootCmd, PicobootCmdId, PicobootError, TargetID};
 
+/// USB Connection Module
 pub mod usb;
 pub use usb::PicobootConnection;

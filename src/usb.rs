@@ -372,8 +372,8 @@ impl<T: UsbContext> PicobootConnection<T> {
     /// - `size` - Number of bytes to erase. Must be a multiple of [`PICO_SECTOR_SIZE`].
     ///
     /// # Errors:
-    /// - [`Error:EraseInvalidAddr`]
-    /// - [`Error:EraseInvalidSize`]
+    /// - [`Error::EraseInvalidAddr`]
+    /// - [`Error::EraseInvalidSize`]
     /// - Any produced by [`Self::cmd`]
     pub fn flash_erase(&mut self, addr: u32, size: u32) -> Result<()> {
         if addr % PICO_SECTOR_SIZE != 0 {
