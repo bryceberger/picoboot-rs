@@ -7,16 +7,13 @@
 //! during this time, and can be used for more advanced management of the
 //! microcontroller device.
 //!
-//! This library exposes the PICOBOOT interface through Rust and libusb (via
-//! rusb)
-//!
 //! # Example
 //!
 //! Flash a UF2 to a Pico device!
 //!
-//! ```
+//! ```rust
 //! use picoboot_rs::{
-//!     cmd::TargetID, usb::PicobootConnection, PICO_FLASH_START, PICO_PAGE_SIZE, PICO_SECTOR_SIZE,
+//!     PicobootConnection, TargetID, PICO_FLASH_START, PICO_PAGE_SIZE, PICO_SECTOR_SIZE,
 //!     PICO_STACK_POINTER,
 //! };
 //!
@@ -50,8 +47,7 @@
 //!                 .expect("failed to connect to PICOBOOT interface");
 //!
 //!             conn.reset_interface().expect("failed to reset interface");
-//!             conn.access_exclusive_eject()
-//!                 .expect("failed to claim access");
+//!             conn.access_exclusive_eject().expect("failed to claim access");
 //!             conn.exit_xip().expect("failed to exit from xip mode");
 //!
 //!             // firmware in a big vector of u8's
@@ -96,25 +92,41 @@
 //! }
 //! ```
 
-// Constants
+/// RP MCU flash page size (for writing)
 pub const PICO_PAGE_SIZE: u32 = 0x100;
+/// RP MCU flash sector size (for erasing)
 pub const PICO_SECTOR_SIZE: u32 = 0x1000;
+/// RP MCU memory address for the start of flash storage
 pub const PICO_FLASH_START: u32 = 0x10000000;
+/// RP MCU memory address for the initial stack pointer
 pub const PICO_STACK_POINTER: u32 = 0x20042000; // same as SRAM_END_RP2040
 
+/// RP USB Vendor ID
 pub const PICOBOOT_VID: u16 = 0x2E8A;
+/// RP2040 USB Product ID
 pub const PICOBOOT_PID_RP2040: u16 = 0x0003;
+/// RP2350 USB Product ID
 pub const PICOBOOT_PID_RP2350: u16 = 0x000f;
 
+/// RP MCU magic number for USB interfacing
 pub const PICOBOOT_MAGIC: u32 = 0x431FD10B;
 
-pub const RP2040_FAMILY_ID: u32 = 0xE48BFF56;
-pub const ABSOLUTE_FAMILY_ID: u32 = 0xE48BFF57;
-pub const DATA_FAMILY_ID: u32 = 0xE48BFF58;
-pub const RP2350_ARM_S_FAMILY_ID: u32 = 0xE48BFF59;
-pub const RP2350_RISCV_FAMILY_ID: u32 = 0xE48BFF5A;
-pub const RP2350_ARM_NS_FAMILY_ID: u32 = 0xE48BFF5B;
-pub const FAMILY_ID_MAX: u32 = 0xE48BFF5B;
+/// UF2 Family ID for RP2040
+pub const UF2_RP2040_FAMILY_ID: u32 = 0xE48BFF56;
+// pub const UF2_ABSOLUTE_FAMILY_ID: u32 = 0xE48BFF57;
+// pub const UF2_DATA_FAMILY_ID: u32 = 0xE48BFF58;
+/// UF2 Family ID for RP2350 (ARM, Secure TrustZone)
+pub const UF2_RP2350_ARM_S_FAMILY_ID: u32 = 0xE48BFF59;
+/// UF2 Family ID for RP2350 (RISC-V)
+pub const UF2_RP2350_RISCV_FAMILY_ID: u32 = 0xE48BFF5A;
+/// UF2 Family ID for RP2350 (ARM, Non-Secure TrustZone)
+pub const UF2_RP2350_ARM_NS_FAMILY_ID: u32 = 0xE48BFF5B;
+// pub const UF2_FAMILY_ID_MAX: u32 = 0xE48BFF5B;
 
 pub mod cmd;
+pub use cmd::{
+    PicobootCmd, PicobootCmdId, PicobootError, PicobootStatus, PicobootStatusCmd, TargetID,
+};
+
 pub mod usb;
+pub use usb::PicobootConnection;

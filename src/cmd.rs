@@ -148,7 +148,7 @@ impl TryFrom<u32> for PicobootStatus {
 
 #[derive(Serialize, Debug, Clone)]
 #[repr(C, packed)]
-pub struct PicobootRangeCmd {
+struct PicobootRangeCmd {
     addr: u32,
     size: u32,
     _unused: u64,
@@ -171,7 +171,7 @@ impl PicobootRangeCmd {
 
 #[derive(Serialize, Debug, Clone)]
 #[repr(C, packed)]
-pub struct PicobootRebootCmd {
+struct PicobootRebootCmd {
     pc: u32,
     sp: u32,
     delay: u32,
@@ -196,7 +196,7 @@ impl PicobootRebootCmd {
 
 #[derive(Serialize, Debug, Clone)]
 #[repr(C, packed)]
-pub struct PicobootReboot2Cmd {
+struct PicobootReboot2Cmd {
     flags: u32,
     delay: u32,
     p0: u32,
@@ -233,8 +233,8 @@ impl PicobootStatusCmd {
         self.token
     }
 
-    pub fn get_status_code(&self) -> u32 {
-        self.status_code
+    pub fn get_status_code(&self) -> PicobootStatus {
+        self.status_code.try_into().unwrap()
     }
 
     pub fn get_cmd_id(&self) -> u8 {

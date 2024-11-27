@@ -26,7 +26,6 @@ pub struct PicobootConnection<T: UsbContext> {
     has_kernel_driver: bool,
     target_id: TargetID,
 }
-
 impl<T: UsbContext> Drop for PicobootConnection<T> {
     fn drop(&mut self) {
         self.handle
