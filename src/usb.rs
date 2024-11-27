@@ -1,5 +1,7 @@
-use crate::cmd::{PicobootCmd, PicobootError, PicobootStatusCmd, TargetID};
-use crate::{PICOBOOT_PID_RP2040, PICOBOOT_PID_RP2350, PICOBOOT_VID};
+use crate::{
+    cmd::{PicobootCmd, PicobootError, PicobootStatusCmd, TargetID},
+    PICOBOOT_PID_RP2040, PICOBOOT_PID_RP2350, PICOBOOT_VID, PICO_PAGE_SIZE, PICO_SECTOR_SIZE,
+};
 
 use bincode;
 use rusb::{Device, DeviceDescriptor, DeviceHandle, Direction, TransferType, UsbContext};
@@ -370,9 +372,16 @@ impl<T: UsbContext> PicobootConnection<T> {
     /// - `size` - Number of bytes to erase. Must be a multiple of [`PICO_SECTOR_SIZE`].
     ///
     /// # Errors:
+    /// - [`Error:EraseInvalidAddr`]
+    /// - [`Error:EraseInvalidSize`]
     /// - Any produced by [`Self::cmd`]
     pub fn flash_erase(&mut self, addr: u32, size: u32) -> Result<()> {
-        // TODO: error on invalid address and/or size
+        if addr % PICO_SECTOR_SIZE != 0 {
+            return Err(Error::EraseInvalidAddr);
+        }
+        if size % PICO_SECTOR_SIZE != 0 {
+            return Err(Error::EraseInvalidSize);
+        }
 
         Ok(self
             .cmd(PicobootCmd::flash_erase(addr, size), vec![])
@@ -381,13 +390,16 @@ impl<T: UsbContext> PicobootConnection<T> {
 
     /// Writes a buffer to the flash memory of the device.
     ///
-    /// - `addr` - Address to start the write. Must be on a multiple of [`PICO_PAGE_SIZE`] and at least [`PICO_FLASH_START`].
+    /// - `addr` - Address to start the write. Must be on a multiple of [`PICO_PAGE_SIZE`].
     /// - `buf` - Buffer of data to write to flash. Should be a multiple of [`PICO_PAGE_SIZE`]. If not, the remainder of the final page is zero-filled.
     ///
     /// # Errors:
+    /// - [`Error::WriteInvalidAddr`]
     /// - Any produced by [`Self::cmd`]
     pub fn flash_write(&mut self, addr: u32, buf: Vec<u8>) -> Result<()> {
-        // TODO: error on invalid address or bad buffer size
+        if addr % PICO_PAGE_SIZE != 0 {
+            return Err(Error::WriteInvalidAddr);
+        }
 
         Ok(self
             .cmd(PicobootCmd::flash_write(addr, buf.len() as u32), buf)
@@ -475,6 +487,9 @@ impl<T: UsbContext> PicobootConnection<T> {
         Ok(buf)
     }
 
+    /// Returns PICOBOOT device type.
+    ///
+    /// Device type is determined by [`Self::new`].
     pub fn get_device_type(&self) -> TargetID {
         self.target_id
     }

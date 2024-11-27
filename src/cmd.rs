@@ -43,6 +43,14 @@ pub enum PicobootError {
 
     #[error("cmd not allowed for target device")]
     CmdNotAllowedForTarget,
+
+    #[error("erase address invalid")]
+    EraseInvalidAddr,
+    #[error("erase size invalid")]
+    EraseInvalidSize,
+
+    #[error("write address invalid")]
+    WriteInvalidAddr,
 }
 
 // see https://datasheets.raspberrypi.com/rp2040/rp2040-datasheet.pdf
