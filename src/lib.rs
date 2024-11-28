@@ -1,3 +1,11 @@
+//! [![github]](https://github.com/NotQuiteApex/picoboot-rs)&ensp;[![crates-io]](https://crates.io/crates/picoboot-rs)&ensp;[![docs-rs]](https://docs.rs/picoboot-rs)
+//!
+//! [github]: https://img.shields.io/badge/github-8da0cb?style=for-the-badge&labelColor=555555&logo=github
+//! [crates-io]: https://img.shields.io/badge/crates.io-fc8d62?style=for-the-badge&labelColor=555555&logo=rust
+//! [docs-rs]: https://img.shields.io/badge/docs.rs-66c2a5?style=for-the-badge&labelColor=555555&logo=docs.rs
+//!
+//! <br>
+//!
 //! Connecting to and communicating with a Raspberry Pi microcontroller in BOOTSEL mode over USB.
 //!
 //! PICOBOOT is a USB interface provided by Raspberry Pi microcontrollers when
