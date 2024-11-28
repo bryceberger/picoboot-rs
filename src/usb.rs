@@ -47,7 +47,7 @@ impl<T: UsbContext> Drop for PicobootConnection<T> {
         if self.has_kernel_driver {
             self.handle
                 .attach_kernel_driver(self.iface)
-                .expect("could not retach kernel driver")
+                .expect("could not retach kernel driver");
         }
     }
 }
@@ -68,92 +68,78 @@ impl<T: UsbContext> PicobootConnection<T> {
     /// - [`Error::UsbDetachKernelDriverFailure`]
     /// - [`Error::UsbClaimInterfaceFailure`]
     /// - [`Error::UsbSetAltSettingFailure`]
-    pub fn new(mut ctx: T, vidpid: impl Into<Option<(u16, u16)>>) -> Result<Self> {
-        let (device, target_id) = match vidpid.into() {
+    pub fn new(mut ctx: T, vidpid: Option<(u16, u16)>) -> Result<Self> {
+        let dev = match vidpid {
             Some((vid, pid)) => {
                 // simple heuristic for determining target type
-                let target_id = if vid == PICOBOOT_VID && pid == PICOBOOT_PID_RP2040 {
-                    TargetID::Rp2040
-                } else {
-                    TargetID::Rp2350
+                let id = match (vid, pid) {
+                    (PICOBOOT_VID, PICOBOOT_PID_RP2040) => TargetID::Rp2040,
+                    _ => TargetID::Rp2350,
                 };
-
-                if let Some(device) = Self::open_device(&mut ctx, vid, pid) {
-                    (Some(device), Some(target_id))
-                } else {
-                    (None, None)
-                }
+                Self::open_device(&mut ctx, vid, pid).map(|d| (d, id))
             }
-            None => {
-                if let Some(device) = Self::open_device(&mut ctx, PICOBOOT_VID, PICOBOOT_PID_RP2040)
-                {
-                    (Some(device), Some(TargetID::Rp2040))
-                } else if let Some(device) =
-                    Self::open_device(&mut ctx, PICOBOOT_VID, PICOBOOT_PID_RP2350)
-                {
-                    (Some(device), Some(TargetID::Rp2350))
+            None => [
+                (PICOBOOT_VID, PICOBOOT_PID_RP2040, TargetID::Rp2040),
+                (PICOBOOT_VID, PICOBOOT_PID_RP2350, TargetID::Rp2350),
+            ]
+            .into_iter()
+            .find_map(|(vid, pid, id)| Self::open_device(&mut ctx, vid, pid).map(|d| (d, id))),
+        };
+
+        let Some(((device, desc, handle), target_id)) = dev else {
+            return Err(Error::UsbDeviceNotFound);
+        };
+
+        let e1 = Self::get_endpoint(&device, 255, 0, 0, Direction::In, TransferType::Bulk);
+        let e2 = Self::get_endpoint(&device, 255, 0, 0, Direction::Out, TransferType::Bulk);
+
+        let (cfg, iface, setting, in_addr, out_addr) = match (e1, e2) {
+            (None, _) | (_, None) => return Err(Error::UsbEndpointsNotFound),
+            (Some((c1, i1, s1, in_addr)), Some((c2, i2, s2, out_addr))) => {
+                if (c1, i1, s1) == (c2, i2, s2) {
+                    (c2, i2, s2, in_addr, out_addr)
                 } else {
-                    (None, None)
+                    return Err(Error::UsbEndpointsUnexpected);
                 }
             }
         };
 
-        match device {
-            Some((device, desc, handle)) => {
-                let e1 = Self::get_endpoint(&device, 255, 0, 0, Direction::In, TransferType::Bulk);
-                let e2 = Self::get_endpoint(&device, 255, 0, 0, Direction::Out, TransferType::Bulk);
+        let has_kernel_driver = if let Ok(true) = handle.kernel_driver_active(iface) {
+            handle
+                .detach_kernel_driver(iface)
+                .map_err(Error::UsbDetachKernelDriverFailure)?;
+            true
+        } else {
+            false
+        };
 
-                if e1.is_none() || e2.is_none() {
-                    return Err(Error::UsbEndpointsNotFound);
-                }
-
-                let (_cfg, _iface, _setting, in_addr) = e1.unwrap();
-                let (cfg, iface, setting, out_addr) = e2.unwrap();
-
-                if _cfg != cfg || _iface != iface || _setting != setting {
-                    return Err(Error::UsbEndpointsUnexpected);
-                }
-
-                let has_kernel_driver = match handle.kernel_driver_active(iface) {
-                    Ok(true) => {
-                        handle
-                            .detach_kernel_driver(iface)
-                            .map_err(Error::UsbDetachKernelDriverFailure)?;
-                        true
-                    }
-                    _ => false,
-                };
-
-                if handle.set_active_configuration(cfg).is_err() {
-                    // println!("Warning: could not set USB active configuration");
-                }
-
-                handle
-                    .claim_interface(iface)
-                    .map_err(Error::UsbClaimInterfaceFailure)?;
-                handle
-                    .set_alternate_setting(iface, setting)
-                    .map_err(Error::UsbSetAltSettingFailure)?;
-
-                Ok(PicobootConnection {
-                    context: ctx,
-                    device,
-                    desc,
-                    handle,
-
-                    cfg,
-                    iface,
-                    setting,
-                    in_addr,
-                    out_addr,
-
-                    cmd_token: 1,
-                    has_kernel_driver,
-                    target_id: target_id.unwrap(),
-                })
-            }
-            None => Err(Error::UsbDeviceNotFound),
+        if handle.set_active_configuration(cfg).is_err() {
+            // println!("Warning: could not set USB active configuration");
         }
+
+        handle
+            .claim_interface(iface)
+            .map_err(Error::UsbClaimInterfaceFailure)?;
+        handle
+            .set_alternate_setting(iface, setting)
+            .map_err(Error::UsbSetAltSettingFailure)?;
+
+        Ok(PicobootConnection {
+            context: ctx,
+            device,
+            desc,
+            handle,
+
+            cfg,
+            iface,
+            setting,
+            in_addr,
+            out_addr,
+
+            cmd_token: 1,
+            has_kernel_driver,
+            target_id,
+        })
     }
 
     fn open_device(
@@ -161,11 +147,7 @@ impl<T: UsbContext> PicobootConnection<T> {
         vid: u16,
         pid: u16,
     ) -> Option<(Device<T>, DeviceDescriptor, DeviceHandle<T>)> {
-        let devices = match ctx.devices() {
-            Ok(d) => d,
-            Err(_) => return None,
-        };
-
+        let devices = ctx.devices().ok()?;
         for device in devices.iter() {
             let device_desc = match device.device_descriptor() {
                 Ok(d) => d,
