@@ -346,7 +346,7 @@ impl PicobootCmd {
 
     /// Creates a REBOOT2 command
     pub fn reboot2_normal(delay: u32) -> Self {
-        let flags: u32 = 0x0; // Normal boot
+        let flags = 0x0; // Normal boot
         let args = PicobootReboot2Cmd::ser(flags, delay, 0, 0);
         PicobootCmd::new(PicobootCmdId::Reboot2, 0x10, 0, args)
     }
