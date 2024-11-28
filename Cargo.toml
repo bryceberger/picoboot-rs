@@ -1,15 +1,20 @@
 [package]
 name = "picoboot-rs"
-license = "MIT OR Apache-2.0"
+authors = ["Logan Hickok-Dickson <self@notquiteapex.net>"]
 description = "A crate for connecting to and communicating with a Raspberry Pi microcontroller in BOOTSEL mode over USB"
-repository = "https://github.com/NotQuiteApex/picoboot-rs"
+license = "MIT OR Apache-2.0"
+homepage = "https://github.com/NotQuiteApex/picoboot-rs"
+repository = "https://github.com/NotQuiteApex/picoboot-rs.git"
+keywords = ["raspberry-pi", "rp2040", "rp2350", "picoboot", "picotool"]
+categories = ["embedded", "hardware-support"]
 readme = "README.md"
+
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.61"
 
 [dependencies]
 bincode = "1.3"
 rusb = "0.9"
 serde = { version = "1.0", features = ["serde_derive"] }
 thiserror = "2"
-# uf2-decode = "0.2"
