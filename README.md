@@ -1,4 +1,4 @@
-# picoboot-rs [![github]](https://github.com/NotQuiteApex/picoboot-rs)&ensp;[![crates-io]](https://crates.io/crates/picoboot-rs)&ensp;[![docs-rs]](https://docs.rs/picoboot-rs)
+# picoboot-rs &ensp; [![github]](https://github.com/NotQuiteApex/picoboot-rs) &ensp; [![crates-io]](https://crates.io/crates/picoboot-rs) &ensp; [![docs-rs]](https://docs.rs/picoboot-rs)
 A crate for connecting to and communicating with a Raspberry Pi microcontroller in BOOTSEL mode over USB!
 
 [github]: https://img.shields.io/badge/github-8da0cb?style=for-the-badge&labelColor=555555&logo=github
