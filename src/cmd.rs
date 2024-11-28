@@ -3,52 +3,73 @@ use thiserror::Error;
 
 use crate::PICOBOOT_MAGIC;
 
+/// Error type for this crate.
 #[derive(Error, Debug)]
 pub enum PicobootError {
+    /// USB device not found.
     #[error("usb device not found")]
     UsbDeviceNotFound,
+    /// Failed to get USB bulk endpoints.
     #[error("failed to get usb bulk endpoints")]
     UsbEndpointsNotFound,
+    /// USB bulk endpoints returned unexpected results.
     #[error("usb bulk endpoints are not expected")]
     UsbEndpointsUnexpected,
+    /// Failed to detach USB kernel driver.
     #[error("failed to detach usb kernel driver: {0}")]
     UsbDetachKernelDriverFailure(rusb::Error),
+    /// Failed to claim USB interface.
     #[error("failed to claim usb interface: {0}")]
     UsbClaimInterfaceFailure(rusb::Error),
+    /// Failed to configure alt USB setting.
     #[error("failed to set alt usb setting: {0}")]
     UsbSetAltSettingFailure(rusb::Error),
+    /// Failed to read from USB bulk endpoint.
     #[error("failed to read bulk: {0}")]
     UsbReadBulkFailure(rusb::Error),
+    /// Read data from USB does not match expected size.
     #[error("read did not match expected size")]
     UsbReadBulkMismatch,
+    /// Failed to write to USB bulk endpoint.
     #[error("failed to write bulk: {0}")]
     UsbWriteBulkFailure(rusb::Error),
+    /// Written data to USB does not match expected size.
     #[error("write did not match expected size")]
     UsbWriteBulkMismatch,
 
+    /// Failed to clear USB in address halt.
     #[error("failed to clear in addr halt: {0}")]
     UsbClearInAddrHalt(rusb::Error),
+    /// Failed to clear USB out address halt.
     #[error("failed to clear out addr halt: {0}")]
     UsbClearOutAddrHalt(rusb::Error),
+    /// Failed to reset USB interface.
     #[error("failed to reset interface: {0}")]
     UsbResetInterfaceFailure(rusb::Error),
 
+    /// Failed to get command status from device.
     #[error("failed to get command status: {0}")]
     UsbGetCommandStatusFailure(rusb::Error),
 
+    /// Failed to serialize command for device.
     #[error("cmd failed to binary serialize: {0}")]
     CmdSerializeFailure(bincode::Error),
+    /// Failed to deserialize command from device.
     #[error("cmd failed to binary deserialize: {0}")]
     CmdDeserializeFailure(bincode::Error),
 
+    /// Command is not allowed for target device.
     #[error("cmd not allowed for target device")]
     CmdNotAllowedForTarget,
 
+    /// Erase command address invalid.
     #[error("erase address invalid")]
     EraseInvalidAddr,
+    /// Erase command size invalid.
     #[error("erase size invalid")]
     EraseInvalidSize,
 
+    /// Write command address invalid.
     #[error("write address invalid")]
     WriteInvalidAddr,
 }
@@ -56,12 +77,16 @@ pub enum PicobootError {
 // see https://datasheets.raspberrypi.com/rp2040/rp2040-datasheet.pdf
 // section 2.8.5 for details on PICOBOOT interface
 
+/// The type of microcontroller detected as the PICOBOOT device.
 #[derive(Debug, Clone, Copy)]
 pub enum TargetID {
+    /// RP2040 MCU target.
     Rp2040,
+    /// RP2350 MCU target.
     Rp2350,
 }
 
+/// Command ID of commands for PICOBOOT interface.
 #[derive(Debug, Clone, Copy)]
 #[repr(u8)]
 pub enum PicobootCmdId {
@@ -257,18 +282,30 @@ impl PicobootStatusCmd {
     }
 }
 
+/// Command structure for PICOBOOT interface.
+///
+/// This structure contains shorthands for creating commands but does not do any
+/// sort of runtime checks to ensure safe use of these commands.
 #[derive(Serialize, Debug, Clone)]
 #[repr(C, packed)]
 pub struct PicobootCmd {
+    /// Magic number ([`PICOBOOT_MAGIC`]) to identify the command for the PICOBOOT interface.
     magic: u32,
+    /// Token number to uniquely identify commands and their responses.
     token: u32,
+    /// Command ID ([`PicobootCmdId`]) to tell what command the data is to be used for. The top bit (0x80) indicates data transfer direction.
     cmd_id: u8,
+    /// Command size, number of bytes to read from the `args` field.
     cmd_size: u8,
+    /// Reserved space
     _unused: u16,
+    /// Transfer length, the number of bytes expected to send or recieve over the bulk endpoint(s).
     transfer_len: u32,
+    /// Command specific args, padded with zeros.
     args: [u8; 16],
 }
 impl PicobootCmd {
+    /// Creates a new PicobootCmd
     pub fn new(cmd_id: PicobootCmdId, cmd_size: u8, transfer_len: u32, args: [u8; 16]) -> Self {
         PicobootCmd {
             magic: PICOBOOT_MAGIC,
@@ -294,42 +331,50 @@ impl PicobootCmd {
         self.cmd_id.try_into().unwrap()
     }
 
+    /// Creates an EXCLUSIVE_ACCESS command
     pub fn exclusive_access(exclusive: u8) -> Self {
         let mut args = [0; 16];
         args[0] = exclusive;
         PicobootCmd::new(PicobootCmdId::ExclusiveAccess, 1, 0, args)
     }
 
+    /// Creates a REBOOT command
     pub fn reboot(pc: u32, sp: u32, delay: u32) -> Self {
         let args = PicobootRebootCmd::ser(pc, sp, delay);
         PicobootCmd::new(PicobootCmdId::Reboot, 12, 0, args)
     }
 
+    /// Creates a REBOOT2 command
     pub fn reboot2_normal(delay: u32) -> Self {
         let flags: u32 = 0x0; // Normal boot
         let args = PicobootReboot2Cmd::ser(flags, delay, 0, 0);
         PicobootCmd::new(PicobootCmdId::Reboot2, 0x10, 0, args)
     }
 
+    /// Creates a FLASH_ERASE command
     pub fn flash_erase(addr: u32, size: u32) -> Self {
         let args = PicobootRangeCmd::ser(addr, size);
         PicobootCmd::new(PicobootCmdId::FlashErase, 8, 0, args)
     }
 
+    /// Creates a WRITE command
     pub fn flash_write(addr: u32, size: u32) -> Self {
         let args = PicobootRangeCmd::ser(addr, size);
         PicobootCmd::new(PicobootCmdId::Write, 8, size, args)
     }
 
+    /// Creates a READ command
     pub fn flash_read(addr: u32, size: u32) -> Self {
         let args = PicobootRangeCmd::ser(addr, size);
         PicobootCmd::new(PicobootCmdId::Read, 8, size, args)
     }
 
+    /// Creates an ENTER_XIP command
     pub fn enter_xip() -> Self {
         PicobootCmd::new(PicobootCmdId::EnterCmdXip, 0, 0, [0; 16])
     }
 
+    /// Creates an EXIT_XIP command
     pub fn exit_xip() -> Self {
         PicobootCmd::new(PicobootCmdId::ExitXip, 0, 0, [0; 16])
     }

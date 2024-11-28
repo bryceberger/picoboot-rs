@@ -13,6 +13,9 @@ type Error = PicobootError;
 type Result<T> = ::std::result::Result<T, Error>;
 
 /// A connection to a PICOBOOT device
+///
+/// This structure contains shorthand functions for send commands with checks to
+/// ensure safety with use of PICOBOOT interface commands.
 #[derive(Debug)]
 pub struct PicobootConnection<T: UsbContext> {
     _context: T,
@@ -60,9 +63,6 @@ impl<T: UsbContext> PicobootConnection<T> {
     /// - [`Error::UsbDetachKernelDriverFailure`]
     /// - [`Error::UsbClaimInterfaceFailure`]
     /// - [`Error::UsbSetAltSettingFailure`]
-    ///
-    /// # Examples
-    /// TODO
     pub fn new(mut ctx: T, vidpid: impl Into<Option<(u16, u16)>>) -> Result<Self> {
         let (device, target_id) = match vidpid.into() {
             Some((vid, pid)) => {
@@ -258,7 +258,9 @@ impl<T: UsbContext> PicobootConnection<T> {
 
     /// Sends a command to the device
     ///
-    /// TODO: better documentation
+    /// Sends a command to the PICOBOOT device. Depending on the command, the
+    /// buffer argument may be used to send data to the device. Depending on the
+    /// command, the returned Vec will contain data from the device.
     ///
     /// # Errors
     /// - [`Error::CmdSerializeFailure`]

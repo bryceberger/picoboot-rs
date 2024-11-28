@@ -22,3 +22,4 @@ dual licensed as above, without any additional terms or conditions.
 * [rp-rs Developer Group](https://github.com/rp-rs)
 * Raspberry Pi microcontroller datasheets for [RP2040](https://datasheets.raspberrypi.com/rp2040/rp2040-datasheet.pdf) and [RP2350](https://datasheets.raspberrypi.com/rp2350/rp2350-datasheet.pdf)
 * [Raspberry Pi](https://raspberrypi.org), [Pico SDK](https://github.com/raspberrypi/pico-sdk), and [Picotool](https://github.com/raspberrypi/picotool)
+* This project and the PICOBOOT interface provided by Raspberry Pi microcontrollers are NOT affiliated with the [Nintendo GameCube hardware hack of the same name](https://github.com/webhdx/PicoBoot).
