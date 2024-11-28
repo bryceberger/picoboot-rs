@@ -192,8 +192,8 @@ struct PicobootRangeCmd {
 impl PicobootRangeCmd {
     pub fn ser(addr: u32, size: u32) -> [u8; 16] {
         let c = PicobootRangeCmd {
-            addr: addr,
-            size: size,
+            addr,
+            size,
             _unused: 0,
         };
         bincode::serialize(&c)
@@ -216,9 +216,9 @@ struct PicobootRebootCmd {
 impl PicobootRebootCmd {
     pub fn ser(pc: u32, sp: u32, delay: u32) -> [u8; 16] {
         let c = PicobootRebootCmd {
-            pc: pc,
-            sp: sp,
-            delay: delay,
+            pc,
+            sp,
+            delay,
             _unused: 0,
         };
         bincode::serialize(&c)
@@ -311,10 +311,10 @@ impl PicobootCmd {
             magic: PICOBOOT_MAGIC,
             token: 0,
             cmd_id: cmd_id as u8,
-            cmd_size: cmd_size,
+            cmd_size,
             _unused: 0,
-            transfer_len: transfer_len,
-            args: args,
+            transfer_len,
+            args,
         }
     }
 
