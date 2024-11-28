@@ -18,14 +18,19 @@ type Result<T> = ::std::result::Result<T, Error>;
 /// ensure safety with use of PICOBOOT interface commands.
 #[derive(Debug)]
 pub struct PicobootConnection<T: UsbContext> {
-    _context: T,
-    _device: Device<T>,
-    _desc: DeviceDescriptor,
+    #[expect(unused)]
+    context: T,
+    #[expect(unused)]
+    device: Device<T>,
+    #[expect(unused)]
+    desc: DeviceDescriptor,
     handle: DeviceHandle<T>,
 
-    _cfg: u8,
+    #[expect(unused)]
+    cfg: u8,
     iface: u8,
-    _setting: u8,
+    #[expect(unused)]
+    setting: u8,
     in_addr: u8,
     out_addr: u8,
 
@@ -131,14 +136,14 @@ impl<T: UsbContext> PicobootConnection<T> {
                     .map_err(Error::UsbSetAltSettingFailure)?;
 
                 Ok(PicobootConnection {
-                    _context: ctx,
-                    _device: device,
-                    _desc: desc,
+                    context: ctx,
+                    device,
+                    desc,
                     handle,
 
-                    _cfg: cfg,
+                    cfg,
                     iface,
-                    _setting: setting,
+                    setting,
                     in_addr,
                     out_addr,
 
